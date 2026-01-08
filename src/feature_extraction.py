@@ -208,7 +208,7 @@ class RAMDFeatureExtractor:
 
         return feats
 
-def process_dataset(benign_dir, malware_dir, output_file='ramd_dataset.csv'):
+def process_dataset(benign_dir, malware_dir, output_file='data/processed/ramd_dataset.csv'):
     extractor = RAMDFeatureExtractor()
     data = []
     labels = [] # 1: Benign, -1: Malware
@@ -240,9 +240,10 @@ def process_dataset(benign_dir, malware_dir, output_file='ramd_dataset.csv'):
     print(f"Done! Saved dataset to {output_file} with shape {df.shape}")
     return df
 
-# Example usage (commented out)
-# if __name__ == "__main__":
-#     # Giả sử cấu trúc thư mục:
-#     # ./dataset/benign/report1.json
-#     # ./dataset/malware/report1.json
-#     process_dataset('./dataset/benign', './dataset/malware')
+
+# example usage
+if __name__ == "__main__":
+    # Giả sử cấu trúc thư mục:
+    # ./data/benign/report1.json
+    # ./data/malware/report1.json
+    process_dataset('./data/benign', './data/malware')

@@ -2,7 +2,7 @@ import os
 
 # Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_DIR, 'data', 'processed', 'dataset.csv')
+DATA_PATH = os.path.join(BASE_DIR, 'data', 'processed', 'ramd_dataset.csv')
 MODEL_PATH = os.path.join(BASE_DIR, 'models', 'ramd_model.pkl')
 
 # Model Parameters

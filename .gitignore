@@ -2,4 +2,5 @@ test.py
 __pycache__
 *.pyc
 .venv/
+ignore/
 data/

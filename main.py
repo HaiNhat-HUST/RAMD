@@ -78,13 +78,14 @@ def test_mode(csv_file=None):
     print("="*30)
     print(f"Detection Rate (DR)   : {dr*100:.2f}%")
     print(f"False Alarm Rate (FAR): {far*100:.2f}%")
-    print(f"Accuracy              : {acc*100:.2f}%")
+    print(f"Accuracy              : {acc*100:.2f}%") 
     print("-" * 30)
     print(f"Confusion Matrix ([-1, 1]):\n{cm}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="RAMD Malware Detection System")
     parser.add_argument('mode', choices=['train', 'test'], help="Chế độ hoạt động: train hoặc test")
+    parser.add_argument('--model_name', choices=['train', 'test'], help="Lựa chọn model để sử dụng", default='ramd_model.pkl')
     parser.add_argument('--input', type=str, help="Đường dẫn file CSV để test (tùy chọn)", default=None)
     
     args = parser.parse_args()

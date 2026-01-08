@@ -27,8 +27,18 @@ class MFECP:
         print("    [MFECP] Pre-calculating pool predictions...")
         self.pool_preds = np.zeros((self.X_val.shape[0], self.m))
         for i, clf in enumerate(self.pool):
-            # OneClassSVM trả về 1 hoặc -1. Chuyển về 1 (benign) và 0 (malware/outlier) để dễ tính toán
-            pred = clf.predict(self.X_val)
+            # Lấy danh sách index các feature mà clf này sử dụng (đã lưu lúc train ở model.py)
+            if hasattr(clf, 'feature_indices_'):
+                feat_idx = clf.feature_indices_
+                # Chỉ lấy đúng các cột feature đó từ X_val
+                X_val_subset = self.X_val[:, feat_idx]
+                
+                # Predict trên tập con
+                pred = clf.predict(X_val_subset)
+            else:
+                # Fallback nếu không tìm thấy attribute (trường hợp hiếm)
+                pred = clf.predict(self.X_val)
+                
             self.pool_preds[:, i] = (pred == 1).astype(int) 
 
     def get_fitness(self, binary_vector):

@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.svm import OneClassSVM
 from sklearn.preprocessing import MinMaxScaler
 from .mfecp import MFECP
-from .fsowa import FSOWA
+from .fsowa import FSOWA 
 
 class RAMD:
     def __init__(self, n_estimators=40, subspace_ratio=0.6, nu=0.03):
