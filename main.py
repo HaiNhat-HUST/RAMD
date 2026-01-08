@@ -8,14 +8,14 @@ from sklearn.metrics import accuracy_score, confusion_matrix
 import config
 from src.model import RAMD
 
-def train_mode():
+def train_mode(arg_dataset=None):
     print("=== TRAIN MODE ===")
     # 1. Load Data
-    if not os.path.exists(config.DATA_PATH):
-        print(f"Error: Dataset not found at {config.DATA_PATH}")
+    if not os.path.exists(config.TRAIN_DATA_PATH):
+        print(f"Error: Dataset not found at {config.TRAIN_DATA_PATH}")
         return
 
-    df = pd.read_csv(config.DATA_PATH)
+    df = pd.read_csv(config.TRAIN_DATA_PATH)
     # Lọc chỉ lấy Benign (Label = 1) để train
     benign_df = df[df['label'] == 1]
     X_benign = benign_df.drop(columns=['label']).values
@@ -47,7 +47,7 @@ def test_mode(csv_file=None):
     print("Model loaded.")
 
     # 2. Load Test Data
-    target_csv = csv_file if csv_file else config.DATA_PATH
+    target_csv = csv_file if csv_file else config.TEST_DATA_PATH
     df = pd.read_csv(target_csv)
     
     X_test = df.drop(columns=['label']).values
@@ -85,12 +85,14 @@ def test_mode(csv_file=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="RAMD Malware Detection System")
     parser.add_argument('mode', choices=['train', 'test'], help="Chế độ hoạt động: train hoặc test")
-    parser.add_argument('--model_name', choices=['train', 'test'], help="Lựa chọn model để sử dụng", default='ramd_model.pkl')
+
+    parser.add_argument('--dataset', help="Dữ liệu training/testing (không dùng nếu đã có file CSV)", default=None)
+    # parser.add_argument('--model_name', choices=['train', 'test'], help="Lựa chọn model để sử dụng", default='ramd_model.pkl')
     parser.add_argument('--input', type=str, help="Đường dẫn file CSV để test (tùy chọn)", default=None)
     
     args = parser.parse_args()
     
     if args.mode == 'train':
-        train_mode()
+        train_mode(args.dataset)
     elif args.mode == 'test':
         test_mode(args.input)
