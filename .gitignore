@@ -1,6 +1,18 @@
-test.py
 __pycache__
 *.pyc
 .venv/
 ignore/
-data/
+
+
+
+# Ignore toàn bộ data và models
+data/*
+models/*
+# Unignore các thư mục cần thiết
+!data/
+!data/processed/
+!models/
+# Unignore các file demo
+!data/processed/demo_test_data.csv
+!data/processed/demo_train_data.csv
+!models/demo_model.pkl
