@@ -5,9 +5,10 @@ __pycache__
 ignore/
 data/
 
+models/
+
 
 # do not ignore demo data and model
-!data/processed/test_demo_data.csv
-!data/processed/train_demo_data.csv
-
-!models/ramd_demo_model.pkl
+!data/processed/demo_test_data.csv
+!data/processed/demo_train_data.csv
+!models/demo_model.pkl
