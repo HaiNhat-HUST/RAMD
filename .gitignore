@@ -4,3 +4,10 @@ __pycache__
 .venv/
 ignore/
 data/
+
+
+# do not ignore demo data and model
+!data/processed/test_demo_data.csv
+!data/processed/train_demo_data.csv
+
+!models/ramd_demo_model.pkl
