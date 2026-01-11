@@ -3,55 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAMD Malware Detector</title>
+    <title>RAMD Analytics Dashboard</title>
+    <!-- CSS Dependencies -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
-        body { background-color: #f8f9fa; }
+        body { background-color: #f3f4f6; font-family: 'Segoe UI', system-ui, sans-serif; }
+        
+        /* Layout & Cards */
+        .dashboard-container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 24px; overflow: hidden; }
+        .card-header { background-color: #ffffff; border-bottom: 1px solid #edf2f7; padding: 15px 20px; font-weight: 600; color: #2d3748; }
+        
+        /* Metric Boxes */
+        .metric-card { background: #f8fafc; border-radius: 10px; padding: 15px; text-align: center; border: 1px solid #e2e8f0; transition: transform 0.2s; }
+        .metric-card:hover { transform: translateY(-2px); }
+        .metric-value { font-size: 24px; font-weight: 800; margin-bottom: 5px; }
+        .metric-label { font-size: 12px; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* Drop Zone */
         .drop-zone {
-            border: 2px dashed #007bff;
-            border-radius: 20px;
-            padding: 50px;
-            text-align: center;
-            background: white;
-            transition: all 0.3s;
-            cursor: pointer;
+            border: 2px dashed #cbd5e0; background-color: #ffffff; border-radius: 16px;
+            height: 300px; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            cursor: pointer; transition: all 0.3s ease;
         }
-        .drop-zone:hover { background-color: #e9ecef; }
-        .drop-zone.dragover { background-color: #cfe2ff; border-color: #0056b3; }
-        #result-card { display: none; margin-top: 20px; }
-        .spinner-border { display: none; }
+        .drop-zone:hover { border-color: #4299e1; background-color: #ebf8ff; }
+        .drop-zone i { color: #a0aec0; transition: color 0.3s; }
+        .drop-zone:hover i { color: #4299e1; }
+        
+        /* Charts */
+        canvas { max-height: 300px; }
+        
+        /* Status Badges */
+        .badge-model { font-size: 0.85em; background: #edf2f7; color: #4a5568; padding: 5px 10px; border-radius: 20px; }
     </style>
 </head>
 <body>
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <h1 class="text-center mb-4">🛡️ RAMD Malware Detector</h1>
-            <p class="text-center text-muted">Registry-based Anomaly Malware Detection using Ensemble Classifiers</p>
+<nav class="navbar navbar-dark bg-dark shadow-sm">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand" href="#">
+            <i class="fas fa-shield-virus me-2"></i> RAMD <span class="fw-light">Malware Detection System</span>
+        </a>
+        <span class="text-white-50 small">Registry-based Analysis</span>
+    </div>
+</nav>
+
+<div class="dashboard-container">
+    <div class="row">
+        <!-- LEFT COLUMN: CONTROL & ANALYTICS -->
+        <div class="col-lg-5">
             
-            <!-- Upload Area -->
-            <div class="drop-zone" id="dropZone">
-                <h4 class="mt-3">Drag & Drop file (.exe) here</h4>
-                <p>or click to browse</p>
-                <input type="file" id="fileInput" hidden>
-            </div>
-
-            <!-- Loading Spinner -->
-            <div class="text-center mt-4">
-                <div class="spinner-border text-primary" role="status" id="loadingSpinner">
-                    <span class="visually-hidden">Loading...</span>
+            <!-- 1. Model Selection -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-cogs me-2"></i>Model Configuration</span>
                 </div>
-                <p id="statusText" class="mt-2 text-muted" style="display:none;">Uploading to Sandbox...</p>
+                <div class="card-body">
+                    <label class="form-label small text-muted fw-bold">SELECT ACTIVE MODEL</label>
+                    <div class="input-group mb-3">
+                        <select class="form-select" id="modelSelect">
+                            <option disabled selected>Loading models...</option>
+                        </select>
+                        <button class="btn btn-primary" id="btnLoadModel" type="button">
+                            <i class="fas fa-sync-alt me-1"></i> Load
+                        </button>
+                    </div>
+                    
+                    <!-- Quick Stats Footer -->
+                    <div class="d-flex justify-content-between small text-muted mt-2 border-top pt-2">
+                        <span id="txtEstimators">Estimators: --</span>
+                        <span id="txtPruned">Pruned: --</span>
+                        <span id="txtNu">Nu: --</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Result Area -->
-            <div class="card text-center" id="result-card">
-                <div class="card-header">Analysis Result</div>
+            <!-- 2. Analytics Tabs -->
+            <div class="card" id="analyticsCard" style="display:none;">
+                <div class="card-header p-0">
+                    <ul class="nav nav-tabs nav-fill" role="tablist">
+                        <li class="nav-item"><button class="nav-link active border-0 py-3" data-bs-toggle="tab" data-bs-target="#tab-metrics">Metrics</button></li>
+                        <li class="nav-item"><button class="nav-link border-0 py-3" data-bs-toggle="tab" data-bs-target="#tab-dataset">Dataset</button></li>
+                        <li class="nav-item"><button class="nav-link border-0 py-3" data-bs-toggle="tab" data-bs-target="#tab-features">Features</button></li>
+                    </ul>
+                </div>
                 <div class="card-body">
-                    <h2 class="card-title" id="verdict">Checking...</h2>
-                    <p class="card-text">Task ID: <span id="taskIdDisplay"></span></p>
-                    <button class="btn btn-secondary" onclick="location.reload()">Analyze Another File</button>
+                    <div class="tab-content">
+                        <!-- METRICS TAB -->
+                        <div class="tab-pane fade show active" id="tab-metrics">
+                            <div class="row g-2 mb-4">
+                                <div class="col-4">
+                                    <div class="metric-card">
+                                        <div class="metric-value text-primary" id="valAcc">--%</div>
+                                        <div class="metric-label">Accuracy</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="metric-card">
+                                        <div class="metric-value text-success" id="valDR">--%</div>
+                                        <div class="metric-label">Detection Rate</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="metric-card">
+                                        <div class="metric-value text-danger" id="valFAR">--%</div>
+                                        <div class="metric-label">False Alarm</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="small fw-bold text-muted mb-3">CONFUSION MATRIX (VALIDATION)</h6>
+                            <table class="table table-bordered text-center table-sm mb-0">
+                                <thead class="table-light">
+                                    <tr><th></th><th>Pred: Mal (-1)</th><th>Pred: Ben (1)</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th class="align-middle bg-light">Actual: Mal</th>
+                                        <td class="text-success fw-bold bg-success-subtle" id="cm_tn">--</td>
+                                        <td class="text-danger bg-danger-subtle" id="cm_fp">--</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="align-middle bg-light">Actual: Ben</th>
+                                        <td class="text-danger bg-danger-subtle" id="cm_fn">--</td>
+                                        <td class="text-success fw-bold bg-success-subtle" id="cm_tp">--</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- DATASET TAB -->
+                        <div class="tab-pane fade" id="tab-dataset">
+                            <div style="height: 250px; position: relative;">
+                                <canvas id="chartDataset"></canvas>
+                            </div>
+                            <div class="text-center mt-3 small text-muted">
+                                Distribution of samples used during Training & Validation
+                            </div>
+                        </div>
+
+                        <!-- FEATURES TAB -->
+                        <div class="tab-pane fade" id="tab-features">
+                            <div style="height: 250px; position: relative;">
+                                <canvas id="chartRadar"></canvas>
+                            </div>
+                            <p class="text-center small text-muted mt-2">
+                                Average feature footprint (Normalized 0-1)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: LIVE ANALYSIS -->
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-microscope me-2"></i>Live Analysis Sandbox</span>
+                    <span class="badge-model" id="activeModelBadge">No Model Loaded</span>
+                </div>
+                <div class="card-body d-flex flex-column justify-content-center p-5">
+                    
+                    <!-- 1. Drop Zone -->
+                    <div class="drop-zone" id="dropZone">
+                        <i class="fas fa-file-upload fa-4x mb-3"></i>
+                        <h4>Drag & Drop Executable Here</h4>
+                        <p class="text-muted mb-0">Supports .exe files for Sandbox Analysis</p>
+                        <input type="file" id="fileInput" hidden>
+                    </div>
+
+                    <!-- 2. Processing State -->
+                    <div id="processingState" class="text-center" style="display:none;">
+                        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+                        <h4 class="mt-4 fw-normal">Analyzing in Cuckoo Sandbox...</h4>
+                        <p class="text-muted">Task ID: <span id="taskIdDisplay" class="fw-bold text-dark">--</span></p>
+                        <div class="progress mt-3" style="height: 5px; max-width: 300px; margin: 0 auto;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Result State -->
+                    <div id="resultState" style="display:none;">
+                        <div class="text-center mb-4">
+                            <div id="verdictIcon" class="mb-2"></div>
+                            <h2 id="verdictText" class="fw-bold mb-0"></h2>
+                            <p class="text-muted small">Based on Registry Anomaly Detection</p>
+                        </div>
+
+                        <div class="card bg-light border-0">
+                            <div class="card-body">
+                                <h6 class="small fw-bold text-muted mb-3">SAMPLE SIGNATURE vs BENIGN PROFILE</h6>
+                                <div style="height: 200px;">
+                                    <canvas id="chartSample"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button class="btn btn-outline-secondary px-4" onclick="resetInterface()">
+                                <i class="fas fa-arrow-left me-2"></i>Analyze Another File
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -59,89 +218,247 @@
 </div>
 
 <script>
+    // --- VARIABLES ---
+    let charts = { dataset: null, radar: null, sample: null };
+    const modelSelect = document.getElementById('modelSelect');
+    
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchModels();
+    });
+
+    // --- API FUNCTIONS ---
+    async function fetchModels() {
+        try {
+            const res = await fetch('/api/models');
+            const data = await res.json();
+            
+            modelSelect.innerHTML = '';
+            data.models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.innerText = m;
+                if(m === data.active) opt.selected = true;
+                modelSelect.appendChild(opt);
+            });
+
+            if(data.active) loadModelData(data.active);
+        } catch(e) { console.error(e); }
+    }
+
+    document.getElementById('btnLoadModel').onclick = () => loadModelData(modelSelect.value);
+
+    async function loadModelData(modelName) {
+        try {
+            const res = await fetch('/api/model_info', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({model_name: modelName})
+            });
+            const data = await res.json();
+            
+            if(data.status === 'success') {
+                updateDashboard(data.info, modelName);
+            } else {
+                alert(data.message);
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    // --- UI UPDATES ---
+    function updateDashboard(info, modelName) {
+        // Show Card
+        document.getElementById('analyticsCard').style.display = 'block';
+        document.getElementById('activeModelBadge').innerText = `Active: ${modelName}`;
+
+        // 1. Params
+        document.getElementById('txtEstimators').innerText = `Estimators: ${info.params.n_estimators}`;
+        document.getElementById('txtPruned').innerText = `Pruned: ${info.pruning.pruned_size}/${info.pruning.original_size}`;
+        document.getElementById('txtNu').innerText = `Nu: ${info.params.nu}`;
+
+        // 2. Metrics
+        const m = info.metrics || {};
+        document.getElementById('valAcc').innerText = (m.accuracy || 0) + '%';
+        document.getElementById('valDR').innerText = (m.dr || 0) + '%';
+        document.getElementById('valFAR').innerText = (m.far || 0) + '%';
+
+        // 3. Confusion Matrix
+        if(info.dataset && info.dataset.confusion_matrix) {
+            const cm = info.dataset.confusion_matrix;
+            // Sklearn CM: [[TN, FP], [FN, TP]] where -1 is first
+            // Row 0 (Actual -1 Mal): Col 0 (Pred -1) = TN(Correct Mal), Col 1 (Pred 1) = FP(Missed)
+            document.getElementById('cm_tn').innerText = cm[0][0];
+            document.getElementById('cm_fp').innerText = cm[0][1];
+            document.getElementById('cm_fn').innerText = cm[1][0];
+            document.getElementById('cm_tp').innerText = cm[1][1];
+        }
+
+        // 4. Charts
+        renderDatasetChart(info.dataset.counts);
+        renderRadarChart(info.dataset.feature_profile);
+    }
+
+    // --- CHART RENDERING ---
+    function renderDatasetChart(counts) {
+        const ctx = document.getElementById('chartDataset').getContext('2d');
+        if(charts.dataset) charts.dataset.destroy();
+        
+        if(!counts) return;
+
+        charts.dataset = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Train Benign', 'Val Benign', 'Val Malware'],
+                datasets: [{
+                    data: [counts.train_benign, counts.val_benign, counts.val_malware],
+                    backgroundColor: ['#4299e1', '#48bb78', '#f56565'],
+                    borderWidth: 0
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    function renderRadarChart(profiles) {
+        const ctx = document.getElementById('chartRadar').getContext('2d');
+        if(charts.radar) charts.radar.destroy();
+
+        if(!profiles) return;
+
+        const labels = Array.from({length: 16}, (_, i) => `f${i+1}`);
+        charts.radar = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Benign Profile', data: profiles.benign, borderColor: '#4299e1', backgroundColor: 'rgba(66, 153, 225, 0.2)' },
+                    { label: 'Malware Profile', data: profiles.malware, borderColor: '#f56565', backgroundColor: 'rgba(245, 101, 101, 0.2)' }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { r: { min: 0, max: 1, ticks: { display: false } } },
+                elements: { line: { borderWidth: 2 } }
+            }
+        });
+    }
+
+    function renderSampleChart(sampleFeatures) {
+        const ctx = document.getElementById('chartSample').getContext('2d');
+        if(charts.sample) charts.sample.destroy();
+
+        // Get benign profile from existing radar chart if possible
+        let benignData = [];
+        if(charts.radar && charts.radar.data.datasets[0]) {
+            benignData = charts.radar.data.datasets[0].data;
+        }
+
+        charts.sample = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Array.from({length: 16}, (_, i) => `f${i+1}`),
+                datasets: [
+                    { 
+                        label: 'This File', 
+                        data: sampleFeatures, 
+                        backgroundColor: '#805ad5',
+                        order: 1
+                    },
+                    { 
+                        label: 'Avg Benign', 
+                        data: benignData, 
+                        type: 'line', 
+                        borderColor: '#4299e1', 
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        order: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, max: 1 } }
+            }
+        });
+    }
+
+    // --- DRAG & DROP LOGIC ---
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
-    const spinner = document.getElementById('loadingSpinner');
-    const statusText = document.getElementById('statusText');
-    const resultCard = document.getElementById('result-card');
-    const verdict = document.getElementById('verdict');
 
-    // Drag & Drop Events
-    dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-    });
-    fileInput.addEventListener('change', () => {
-        if (fileInput.files.length) handleFile(fileInput.files[0]);
-    });
+    dropZone.onclick = () => fileInput.click();
+    fileInput.onchange = () => { if(fileInput.files.length) uploadFile(fileInput.files[0]); };
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = '#4299e1'; dropZone.style.backgroundColor = '#ebf8ff'; };
+    dropZone.ondragleave = () => { dropZone.style.borderColor = '#cbd5e0'; dropZone.style.backgroundColor = '#ffffff'; };
+    dropZone.ondrop = (e) => { 
+        e.preventDefault(); 
+        dropZone.style.borderColor = '#cbd5e0'; dropZone.style.backgroundColor = '#ffffff';
+        if(e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]); 
+    };
 
-    function handleFile(file) {
-        // UI Reset
-        dropZone.style.display = 'none';
-        spinner.style.display = 'inline-block';
-        statusText.style.display = 'block';
-        statusText.innerText = "Uploading to Cuckoo Sandbox...";
+    function uploadFile(file) {
+        document.getElementById('dropZone').style.display = 'none';
+        document.getElementById('processingState').style.display = 'block';
 
-        const formData = new FormData();
-        formData.append('file', file);
+        const fd = new FormData(); fd.append('file', file);
 
-        // 1. Submit File
-        fetch('/analyze', { method: 'POST', body: formData })
-            .then(res => res.json())
+        fetch('/analyze', { method: 'POST', body: fd })
+            .then(r => r.json())
             .then(data => {
-                if (data.error) throw new Error(data.error);
-                const taskId = data.task_id;
-                statusText.innerText = `File submitted (Task ID: ${taskId}). Waiting for analysis...`;
-                pollStatus(taskId);
+                if(data.error) { alert(data.error); resetInterface(); return; }
+                document.getElementById('taskIdDisplay').innerText = data.task_id;
+                pollResult(data.task_id);
             })
-            .catch(err => {
-                alert("Error: " + err.message);
-                location.reload();
-            });
+            .catch(e => { alert('Upload error'); resetInterface(); });
     }
 
-    function pollStatus(taskId) {
-        // Poll every 5 seconds
+    function pollResult(taskId) {
         const interval = setInterval(() => {
             fetch(`/check_result/${taskId}`)
-                .then(res => res.json())
+                .then(r => r.json())
                 .then(data => {
-                    if (data.status === 'done') {
+                    if(data.status === 'done') {
                         clearInterval(interval);
-                        showResult(data);
-                    } else if (data.status === 'error') {
+                        showVerdict(data);
+                    } else if(data.status === 'error') {
                         clearInterval(interval);
-                        alert("Analysis Failed: " + data.message);
-                        location.reload();
-                    } else {
-                        // Still processing
-                        statusText.innerText = `Sandbox Analyzing (Task ${taskId})... This may take a few minutes.`;
+                        alert(data.message);
+                        resetInterface();
                     }
-                })
-                .catch(err => console.error(err));
-        }, 5000);
+                });
+        }, 3000); // Poll every 3s
     }
 
-    function showResult(data) {
-        spinner.style.display = 'none';
-        statusText.style.display = 'none';
-        resultCard.style.display = 'block';
-        
-        document.getElementById('taskIdDisplay').innerText = data.details.task_id;
-        
-        if (data.result === 'MALICIOUS') {
-            verdict.innerText = "⚠️ MALICIOUS DETECTED";
-            verdict.style.color = "red";
+    function showVerdict(data) {
+        document.getElementById('processingState').style.display = 'none';
+        document.getElementById('resultState').style.display = 'block';
+
+        const vText = document.getElementById('verdictText');
+        const vIcon = document.getElementById('verdictIcon');
+
+        if(data.result === 'MALICIOUS') {
+            vText.innerText = "MALICIOUS";
+            vText.className = "text-danger fw-bold mb-0";
+            vIcon.innerHTML = '<i class="fas fa-biohazard fa-5x text-danger"></i>';
         } else {
-            verdict.innerText = "✅ BENIGN FILE";
-            verdict.style.color = "green";
+            vText.innerText = "BENIGN";
+            vText.className = "text-success fw-bold mb-0";
+            vIcon.innerHTML = '<i class="fas fa-check-circle fa-5x text-success"></i>';
+        }
+
+        // Render sample comparison chart
+        if(data.details && data.details.features) {
+            renderSampleChart(data.details.features[0]);
         }
     }
-</script>
 
+    function resetInterface() {
+        document.getElementById('dropZone').style.display = 'flex';
+        document.getElementById('processingState').style.display = 'none';
+        document.getElementById('resultState').style.display = 'none';
+        fileInput.value = '';
+    }
+
+</script>
 </body>
 </html>

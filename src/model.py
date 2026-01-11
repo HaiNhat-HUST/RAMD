@@ -20,6 +20,9 @@ class RAMD:
         self.sec_mask = np.zeros(16, dtype=bool)
         self.sec_mask[7:14] = True
 
+        self.training_metrics = {}
+        self.dataset_meta = {}
+
     def fit(self, X_train, X_val):
         """
         Quy trình huấn luyện toàn diện:
