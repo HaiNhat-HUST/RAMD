@@ -1,52 +1,65 @@
-# RAMD
-registry-based anomaly malware detection using one-class ensemble classifiers
+# RAMD: Registry-based Anomaly Malware Detection
+An implementation of malware detection using one-class ensemble classifiers based on Windows Registry activities.
+
+## Project Overview
+This project provides a complete pipeline from feature extraction of Cuckoo Sandbox reports to training and deploying an anomaly detection model. 
+It includes a pre-trained model for demo and a web interface for real-time malware analysis.
+
+>Raw data (json reports) is not included because it huge. Preprocessed data is included in data/preprocessed folder for quickly test and demo. So need to add new data to data folder if you want to train your own model
+
+## Repository Structure
+
+```text
+./RAMD
+├── data/                        # Preprocessed data for quick testing
+├── src/
+│   ├── models/                  # Storing trained model files (.pkl, .h5, etc.)
+│   ├── ramd_implementation/     # Core preprocessing and RAMD algorithm
+│   └── web/                     # Flask/FastAPI web application source code
+├── preprocessing.py             # Script for data feature extraction
+├── train.py                     # Model training entry point
+├── test.py                      # Model evaluation entry point
+└── app.py                       # Web demo entry point
+```
 
 
 
-
-## repositiory description
-1. raw test data is not included because it huge, preprocessed data is included in data/preprocessed folder for quickly test and demo. So need to add new data to data folder if you want to train your own folder
-2. 
-
-
-
-
-
-## web application demo
-1. need to start cuckoo server (follow the documents)
-2. run `python3 app.py`
-
-# about this project
-
-this project already have pre-trained model for test and demo
+## Setup & Installation
+1. Clone the repository:
+```Bash
+git clone [https://github.com/your-username/RAMD.git](https://github.com/your-username/RAMD.git)
+cd RAMD
+```
+2. Environment Setup:
+```Bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+3. Cuckoo Sandbox: Ensure you have a running Cuckoo Sandbox instance. Configure the API to be accessible at 0.0.0.0.
 
 ## workflow
-1. Fetch jason report from cuckoo
-2. Perform feature extraction as mentioned in paper about RAMD to preparing data before training model
-3. Training model with preprocessed data `train.py`
-4. Test the model with preprocessed data `test.py`
-5. Demo by running `app.py`, upload executable file to the application
-   1. Application will sent this file to cuckoo sandbox
-   2. Cuckoo sandbox run this file, perform analyze and create report
-   3. Application fetch the json report and perform preprocessing data to convert data into suitable format before test
-   4. Application feed the model with pre-processed file to perform classification
-
-# setup
-1. Setup virtual environment and install requirements packages
-2. Training
-   1. Preparing cuckoo report (of benign and malware sample) for training and testing, put them in the folder structure as below
-      ./DATA
-      ├───ben_test
-      ├───ben_train
-      ├───mal_test
-      ├───mal_train
-      └───processed
-   2. Preprocessing data into suiteble format for training and testing
-   3. Run `train.py` for training model
-3. Testing
-   1. Ensure the testing data is processed
-   2. Run `test.py` and feed them testing data for evaluate model
-4. Demo
-   1. Setup cuckoo following the instruction in docs, NAT network configuration and expose cuckoo app to 0.0.0.0
-   2. Run `app.py` for demo
-
+1. Data Preparation
+Organize your raw Cuckoo JSON reports as follows:
+```text
+./DATA
+├── ben_train/ | ben_test/  # Benign samples
+└── mal_train/ | mal_test/  # Malware samples
+```
+2. Preprocessing
+```Bash
+python preprocessing.py --input ./DATA --output ./data/processed
+```
+1. Training & Evaluation
+```Bash
+python3 train.py  # Trains the one-class ensemble model
+python3 test.py   # Evaluates performance on test data
+```
+1. Web Demo
+   - Start your Cuckoo server.
+   - Run the application: python app.py
+   - Upload an .exe file via the web UI.
+   - The system will:
+      - Submit the file to Cuckoo.
+      - Fetch the dynamic analysis report.
+      - Extract features and classify the behavior.
