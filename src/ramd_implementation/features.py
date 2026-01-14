@@ -56,6 +56,7 @@ class RAMDFeatureExtractor:
             with open(json_path, 'r') as f:
                 report = json.load(f)
         except Exception as e:
+            json_path = os.path.abspath(json_path)
             print(f"Error reading {json_path}: {e}")
             return None
 
@@ -208,28 +209,41 @@ class RAMDFeatureExtractor:
 
         return feats
 
-def process_dataset(benign_dir, malware_dir, output_file='data/processed/train_dataset.csv'):
+def process_dataset(benign_dir, malware_dir, output_file='../data/processed/preprocessed_data.csv'):
     extractor = RAMDFeatureExtractor()
     data = []
     labels = [] # 1: Benign, -1: Malware
 
-    print("Processing Benign samples...")
-    for filename in os.listdir(benign_dir):
-        if filename.endswith('.json'):
-            path = os.path.join(benign_dir, filename)
-            vec = extractor.extract_from_json(path)
-            if vec is not None:
-                data.append(vec)
-                labels.append(1)
+    try:
+        # check folder
+        if not os.path.exists(benign_dir):
+            print("Benign directory does not exist. Path: ", os.path.abspath(benign_dir))
+            return None
 
-    print("Processing Malware samples...")
-    for filename in os.listdir(malware_dir):
-        if filename.endswith('.json'):
-            path = os.path.join(malware_dir, filename)
-            vec = extractor.extract_from_json(path)
-            if vec is not None:
-                data.append(vec)
-                labels.append(-1)
+        if not os.path.exists(malware_dir):
+            print("Malware directory does not exist. Path: ", os.path.abspath(malware_dir))
+            return None
+
+        print("Processing Benign samples...")
+        for filename in os.listdir(benign_dir):
+            if filename.endswith('.json'):
+                path = os.path.join(benign_dir, filename)
+                vec = extractor.extract_from_json(path)
+                if vec is not None:
+                    data.append(vec)
+                    labels.append(1)
+
+        print("Processing Malware samples...")
+        for filename in os.listdir(malware_dir):
+            if filename.endswith('.json'):
+                path = os.path.join(malware_dir, filename)
+                vec = extractor.extract_from_json(path)
+                if vec is not None:
+                    data.append(vec)
+                    labels.append(-1)
+    except Exception as e:
+        print(f"Error processing dataset: {e}")
+        return None
 
     # Convert to DataFrame
     cols = [f'f{i+1}' for i in range(16)]
@@ -239,11 +253,3 @@ def process_dataset(benign_dir, malware_dir, output_file='data/processed/train_d
     df.to_csv(output_file, index=False)
     print(f"Done! Saved dataset to {output_file} with shape {df.shape}")
     return df
-
-
-# example usage
-if __name__ == "__main__":
-    # Giả sử cấu trúc thư mục:
-    # ./data/benign/report1.json
-    # ./data/malware/report1.json
-    process_dataset('./data/ben_test', './data/mal_test', output_file='data/processed/test_dataset.csv')

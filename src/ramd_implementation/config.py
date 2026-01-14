@@ -16,6 +16,6 @@ GAMMA = 1.0
 Cuckoo_url = "http://127.0.0.1:8090"
 
 # built-in demo
-TRAIN_DATA_DEMO = os.path.join(BASE_DIR, 'data', 'processed', 'demo_train_data.csv')
-TEST_DATA_DEMO = os.path.join(BASE_DIR, 'data', 'processed', 'demo_test_data.csv')
-MODEL_DEMO= os.path.join(BASE_DIR, 'models', 'demo_model')
+TRAIN_DATA_DEMO = os.path.join(BASE_DIR, '..','data', 'processed', 'demo_train_data.csv')
+TEST_DATA_DEMO = 'demo_test_data.csv'
+MODEL_DEMO= os.path.join(BASE_DIR, '..', 'models', 'demo_model.pkl')
