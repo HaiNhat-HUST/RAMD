@@ -42,18 +42,50 @@ pip install -r requirements.txt
 1. Data Preparation
 Organize your raw Cuckoo JSON reports as follows:
 ```text
-./DATA
+./data
 ├── ben_train/ | ben_test/  # Benign samples
 └── mal_train/ | mal_test/  # Malware samples
 ```
 2. Preprocessing
 ```Bash
-python preprocessing.py --input ./DATA --output ./data/processed
+$ python .\preprocessing.py --help 
+usage: preprocessing.py [-h] [--benign-report-folder BENIGN_REPORT_FOLDER] [--malware-report-folder MALWARE_REPORT_FOLDER] [--output-file OUTPUT_FILE]
+
+RAMD Testing Module
+
+options:
+  -h, --help            show this help message and exit
+  --benign-report-folder BENIGN_REPORT_FOLDER
+                        Path to benign report folder for preprocessing
+  --malware-report-folder MALWARE_REPORT_FOLDER
+                        Path to malware report folder for preprocessing
+  --output-file OUTPUT_FILE
+                        Output file path for the processed dataset. Ex: data/processed/processed_dataset.csv
 ```
 1. Training & Evaluation
 ```Bash
-python3 train.py  # Trains the one-class ensemble model
-python3 test.py   # Evaluates performance on test data
+$ python train.py --help 
+usage: train.py [-h] [--data DATA] [--model-name MODEL_NAME]
+
+RAMD Training Module
+
+options:
+  -h, --help            show this help message and exit
+  --data DATA           Path to CSV file data for training
+  --model-name MODEL_NAME
+                        Custom name for saved model (without extension)
+```
+
+```Bash
+$ python test.py --help 
+usage: test.py [-h] [--input INPUT] [--model MODEL]
+
+RAMD Testing Module
+
+options:
+  -h, --help            show this help message and exit
+  --input INPUT         Path to CSV file for testing
+  --model MODEL         Path to the trained model file
 ```
 1. Web Demo
    - Start your Cuckoo server.
