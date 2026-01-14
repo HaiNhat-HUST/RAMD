@@ -1,11 +1,12 @@
 # train.py
 import os
 import argparse
-from sklearn.model_selection import train_test_split
-import config
-from src.model import RAMD
-from src.utils import calculate_metrics, load_dataset
 import numpy as np
+from sklearn.model_selection import train_test_split
+from ramd_implementation import config
+from ramd_implementation.model import RAMD
+from ramd_implementation.utils import load_dataset, calculate_metrics
+
 
 def main():
 
@@ -18,7 +19,10 @@ def main():
     
     # 1. Load Data
     if args.data:
-        train_data = os.path.join(config.BASE_DIR, 'data', 'processed', args.data)
+        train_data = os.path.join(config.BASE_DIR,'..','..', 'data', 'processed', args.data)
+        if not os.path.exists(train_data):
+            print(f"Error: Training data file not found at {train_data}.")
+            return
         print(f"[1/5] Loading data from: {train_data}")
         X, y = load_dataset(train_data)
     else:
@@ -110,6 +114,9 @@ def main():
 
     if args.model_name:
         model_path = os.path.join(os.path.dirname(config.MODEL_DEMO), args.model_name + '.pkl')
+        
+        if os.path.exists(model_path):
+            print(f"Warning: Model file {model_path} already exists and will be overwritten.")
     else:
         model_path = config.MODEL_DEMO
     

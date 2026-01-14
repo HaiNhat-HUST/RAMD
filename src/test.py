@@ -1,43 +1,45 @@
 # test.py
 import os
 import argparse
-import config
-from src.model import RAMD
-from src.utils import load_dataset, calculate_metrics
+from ramd_implementation import config
+from ramd_implementation.model import RAMD
+from ramd_implementation.utils import load_dataset, calculate_metrics
 
 def main():
     parser = argparse.ArgumentParser(description="RAMD Testing Module")
 
-    parser.add_argument('--input', type=str, default=config.TEST_DATA_DEMO, help="Path to CSV file for testing")
-    parser.add_argument('--model', type=str, default=config.MODEL_DEMO, help="Path to the trained model file")
+    parser.add_argument('--input', type=str, help="Path to CSV file for testing")
+    parser.add_argument('--model', type=str, help="Path to the trained model file")
     args = parser.parse_args()
 
     print("=== RAMD TESTING MODULE ===")
 
     # 1. Load Model
     if args.model:
-        if not os.path.exists(args.model):
-            print(f"Error: Model not found at {args.model}. Please train model with 'python train.py' first.")
+        model_path = os.path.abspath("models\\" + args.model)
+        if not os.path.exists(model_path):
+            print(f"Error: Model not found at {model_path}. Please train model with 'python train.py' first.")
             return
-        model = RAMD.load(os.path.join(config.BASE_DIR, 'models', args.model))
+        model = RAMD.load(model_path)
     else:
-        print("Model path not provided, using built-in demo model.")
+        print(f"Model path not provided, using built-in demo model at {config.MODEL_DEMO}")
         model = RAMD.load(config.MODEL_DEMO)
 
     print("Model loaded successfully.")
 
     # 2. Load Test Data
-
+    current_dir = os.path.dirname(os.path.abspath(__file__))
     if args.input:
-        input_path = os.path.join(config.BASE_DIR, 'data', 'processed', args.input)
+        input_path = os.path.abspath(os.path.join(current_dir, '..', 'data', 'processed', args.input))
         if not os.path.exists(input_path):
             print(f"Error: Input data file not found at {input_path}.")
             return
         
-        input = args.input
+        input = input_path
     else:
         print("Error: No input data path provided. Test model with built-in demo test data. (demo_test_data.csv)")
-        input = config.TEST_DATA_DEMO
+        input = os.path.abspath(os.path.join(current_dir, '..', 'data', 'processed',config.TEST_DATA_DEMO))
+
 
     print(f"Testing on file: {input}")
     X_test, y_test = load_dataset(input)
